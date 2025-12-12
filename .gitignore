@@ -1,0 +1,17 @@
+# Ignore all CSV files
+*.csv
+
+# Allow sample.csv to be committed
+!sample.csv
+
+# Ignore logs
+*.log
+
+# Ignore OS files
+.DS_Store
+
+# Ignore Python specific files
+__pycache__/
+*.pyc
+.venv/
+migration_venv/
