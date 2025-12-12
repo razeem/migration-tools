@@ -61,6 +61,16 @@ python3 fetch-image.py -n 50
 python3 fetch-image.py --verbose
 ```
 
+### Extract content from different sites
+
+The script defaults to extracting images from `div.ms-rtestate-field img` (SharePoint style).
+To scrape other sites, provide a custom CSS selector:
+
+```bash
+# E.g. scrape Wikipedia homepage logo
+python3 fetch-image.py --selector ".mw-logo-icon"
+```
+
 ---
 
 ## 📄 Input File Format
@@ -81,6 +91,7 @@ The default input file is `sample.csv`.
 | `-n`, `--limit` | Number of rows to process (`0` for all). | `10` |
 | `--input` | Input CSV filename. | `sample.csv` |
 | `--output` | Output CSV filename. | `[Input]_with_images.csv` |
+| `--selector` | CSS Selector to find the image. | `div.ms-rtestate-field img` |
 | `--workers` | Number of concurrent worker threads. | `8` |
 | `--error-log`| File to log errors to. | `fetch_errors.log` |
 | `--verbose` | Enable detailed debug logging. | `False` |

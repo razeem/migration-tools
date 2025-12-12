@@ -27,6 +27,8 @@ INPUT_CSV = "sample.csv"
 INPUT_CSV = "sample.csv"
 PAGEURL_COLUMN_NAME = "PageUrl"   # case-insensitive match
 IMAGE_COLUMN_NAME = "ImageURL"
+
+DEFAULT_IMAGE_SELECTOR = "div.ms-rtestate-field img"
 NUM_WORKERS = 8
 REQUEST_TIMEOUT = 12
 RETRY_COUNT = 2
@@ -88,26 +90,14 @@ def fetch_html(url: str) -> Tuple[Optional[str], Optional[str]]:
     log(f"[ERROR] All fetch attempts failed for: {url}  (last error: {last_exc})")
     return None, None
 
-def extract_image_from_html(html: str, base_url: str) -> Optional[str]:
-    """Return resolved image URL found inside first div.ms-rtestate-field img or None."""
-    log(f"[DEBUG] Parsing HTML from: {base_url}")
+def extract_image_from_html(html: str, base_url: str, selector: str) -> Optional[str]:
+    """Return resolved image URL found using the provided CSS selector."""
+    log(f"[DEBUG] Parsing HTML from: {base_url} with selector: '{selector}'")
     soup = BeautifulSoup(html, "html.parser")
 
-    divs = soup.select("div.ms-rtestate-field")
-    log(f"[DEBUG] Found {len(divs)} div.ms-rtestate-field elements")
-    if not divs:
-        log("[WARN] No <div class='ms-rtestate-field'> found")
-        return None
-
-    img_tag = soup.select_one("div.ms-rtestate-field img")
+    img_tag = soup.select_one(selector)
     if not img_tag:
-        log("[WARN] No <img> found inside ms-rtestate-field")
-        if divs and VERBOSE:
-            try:
-                snippet = divs[0].prettify()[:800]
-                log("[DEBUG] First ms-rtestate-field snippet:\n" + snippet)
-            except Exception:
-                pass
+        log(f"[WARN] No element found matching selector: '{selector}'")
         return None
 
     src = img_tag.get("src") or img_tag.get("data-src") or ""
@@ -137,7 +127,7 @@ def find_pagecol(fieldnames: list[str]) -> Optional[str]:
             return c
     return None
 
-def process_row(page_url: str) -> str:
+def process_row(page_url: str, selector: str) -> str:
     """Process a single page URL and return the resolved image URL or empty string."""
     log(f"\n=== Processing PageUrl: {page_url} ===")
     if not page_url:
@@ -148,7 +138,7 @@ def process_row(page_url: str) -> str:
         log("[ERROR] No HTML returned for page")
         log_missing(f"URL_FAIL: {page_url}")
         return ""
-    img = extract_image_from_html(html, final_url or page_url)
+    img = extract_image_from_html(html, final_url or page_url, selector)
     log(f"[DEBUG] Final extracted image URL: {img}")
     
     if not img:
@@ -163,8 +153,8 @@ def main() -> None:
     parser.add_argument("-n", "--limit", type=int, default=10,
                         help="Number of rows to process. Default 10. Use 0 for all rows.")
     parser.add_argument("--input", default=INPUT_CSV, help=f"Input CSV filename (default: {INPUT_CSV})")
-
     parser.add_argument("--output", default=None, help="Output CSV filename. If not set, defaults to [InputFilename]_with_images.csv")
+    parser.add_argument("--selector", default=DEFAULT_IMAGE_SELECTOR, help=f"CSS selector to find the image (default: '{DEFAULT_IMAGE_SELECTOR}')")
     parser.add_argument("--workers", type=int, default=NUM_WORKERS, help="Number of concurrent workers.")
     parser.add_argument("--verbose", action="store_true", help="Enable detailed logging for debugging.")
     parser.add_argument("--insecure", action="store_true", help="Disable SSL verification (unsafe; for debugging).")
@@ -232,7 +222,7 @@ def main() -> None:
         future_to_index = {}
         for idx, row in enumerate(to_process):
             url = (row.get(page_col) or "").strip()
-            future = ex.submit(process_row, url)
+            future = ex.submit(process_row, url, args.selector)
             future_to_index[future] = (idx, url)
 
         for fut in as_completed(future_to_index):
