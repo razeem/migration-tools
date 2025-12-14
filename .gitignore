@@ -1,3 +1,6 @@
+# Ignore downloaded images
+downloaded_images/
+
 # Ignore all CSV files
 *.csv
 

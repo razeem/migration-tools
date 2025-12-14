@@ -84,7 +84,33 @@ The default input file is `sample.csv`.
 
 ---
 
-## ⚙️ Configuration Options
+## ⬇️ Download Images (Step 2)
+
+After extracting image URLs, you can download the actual image files for migration.
+
+This script will:
+1. Read the CSV containing `ImageURL`.
+2. Download each image to a local folder (default: `downloaded_images/`).
+3. Create a new CSV with `ImageFileName` and `ImageFilePath` columns added.
+
+### Usage
+
+```bash
+python3 download-images.py --input sample_with_images.csv --output final_migration_data.csv
+```
+
+**Arguments:**
+
+| Flag | Description | Default |
+| :--- | :--- | :--- |
+| `--input` | Input CSV containing `ImageURL`. | `sample_with_images.csv` |
+| `--output` | Output CSV (result). | `[Input]_downloaded.csv` |
+| `--folder` | Directory to save images. | `downloaded_images` |
+| `--workers` | Concurrent downloads. | `8` |
+
+---
+
+## ⚙️ Configuration Options (fetch-image.py)
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
